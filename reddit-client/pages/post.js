@@ -1,16 +1,17 @@
 import React from 'react'
 import axios from "axios";
+import fetch from 'isomorphic-unfetch'
 
 export default class extends React.Component {
     constructor(){
         super();
         this.state = {
             value: '',
-            children: []
+            result: '',
+            isLoaded: false,
         };
         this.handleChange = this.handleChange.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
-       
+        this.handleSubmit = this.handleSubmit.bind(this);       
     }    
 
     handleChange(event){
@@ -19,16 +20,40 @@ export default class extends React.Component {
 
     async handleSubmit(event){         
         event.preventDefault(); 
-        axios.get(`'http://localhost:3000/api/discussions/'${this.state.value}`).then(
-            Response => {
-                
+        await axios.get(`http://localhost:3000/api/discussions/${this.state.value}`).then(
+            Response => {               
                 if(Response.status === 200){
-                    this.setState({children: Response.data});
-                } else {
-                    this.setState({children: []});
+                    this.setState({isLoaded: true});
+                    const res = Response.data;
+                    this.setState({result: res});
                 }
             }
         )
+    }
+
+    get renderResponse (){
+        if(this.state.isLoaded){
+            this.state.result.data.children.map(
+                (u) => {
+                    return(
+                       <div>
+                            <ul>
+                                <li>{u.data.author}</li>
+                                <li>{u.data.title}</li>
+                                <li>{u.data.selftext}</li>
+                            </ul>
+                        </div>
+                    )
+                }
+            )           
+        } else {
+            return(
+                <div>
+                    <p></p>
+                </div>
+            )
+        }
+  
     }
 
     render(){
@@ -38,26 +63,9 @@ export default class extends React.Component {
                 <form onSubmit = {this.handleSubmit}>
                     <input type="text" value = {this.state.value} onChange = {this.handleChange}></input>
                     <input type="submit" value="Search"></input>
-                </form>    
-
-                
-                {this.state.children.map((u) => {
-                    return( 
-                        <p>{u.children.author}</p>
-                )})}
-
-                
+                </form> 
+                <p>{this.renderResponse}</p>                   
             </div>
-
-        );
-    }
-
-   /* async componentDidMount(){
-        alert(this.state.value);
-        let result = await axios.get(`'http://localhost:3000/api/discussions/'${this.state.value}`)
-            .then(response => {
-                console.log(response)
-            });
-        this.state.data = result.data;
-    }*/
+        );        
+    }   
 }
